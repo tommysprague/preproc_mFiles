@@ -18,7 +18,7 @@
 % optional ROIs arg?
 
 
-function do_RFs(subjID,sessPath,EPIext,IPname,stimExt,myTR)
+function do_RFs_mb_tst(subjID,sessPath,EPIext,IPname,stimExt,myTR)
 
 addpath ~/
 startup;    % because sometimes running from command line is weird?
@@ -55,7 +55,7 @@ if nargin < 5
 end
 
 if nargin < 6
-    myTR = 2.5; % typically use this (s)
+    myTR = 1.2; % typically use this (s)
 end
 
 if ~isnumeric(myTR)
@@ -98,7 +98,7 @@ for ee = 1:length(EPIext)
     
     
     % Specify EPI files
-    tmp = dir(sprintf('bar_width_*_%s.nii.gz', EPIext{ee}));
+    tmp = dir(sprintf('bar_width_*%s.nii.gz', EPIext{ee}));
     for ii = 1:numel(tmp)
         epi_file{ii} = tmp(ii).name;
         assert(exist(epi_file{ii}, 'file')>0)
@@ -225,7 +225,7 @@ for ee = 1:length(EPIext)
     
     params(1).fliprotate=[0 0 0]; %% Set up pRF model
     params(1).stimType='StimFromScan';
-    params(1).stimSize=12; % DEGREES VISUAL ANGLE (RADIUS)
+    params(1).stimSize=29.35/2; % DEGREES VISUAL ANGLE (RADIUS)
     params(1).stimWidth=45; % ignored when you have 'stimFromScan'
     params(1).stimStart=0;  % ignored when you have 'stimFromScan'
     params(1).stimDir=0;    % ignored when you have 'stimFromScan'
@@ -241,20 +241,20 @@ for ee = 1:length(EPIext)
     
     % TODO: be smarter at this!!!!
     params(1).framePeriod=myTR; % TR in seconds TODO: make this automatic using nii info!!!!!
-    params(1).nFrames=120;        % number of volumes
+    params(1).nFrames=304;        % number of volumes or 304
     
-    params(1).imFile=sprintf('%s/Stimuli/barWidth1_images%s.mat',sessPath,stimExt);     % see makeStimFromScan
+    params(1).imFile=sprintf('%s/Stimuli/bar_stimulus_masks_1200ms_images%s.mat',sessPath,stimExt);     % see makeStimFromScan
     params(1).jitterFile=sprintf('%s/Stimuli/none',sessPath);                 % ignore (for eye movements)
-    params(1).paramsFile=sprintf('%s/Stimuli/barWidth1_params%s.mat',sessPath,stimExt); % see makeStimFromScan
+    params(1).paramsFile=sprintf('%s/Stimuli/bar_stimulus_masks_1200ms_params%s.mat',sessPath,stimExt); % see makeStimFromScan
     params(1).imFilter='none';                           % stim file is already a binary contrast mask
     
-    params(2) = params(1);
-    params(2).imFile = sprintf('%s/Stimuli/barWidth2_images%s.mat',sessPath,stimExt);
-    params(2).paramsFile = sprintf('%s/Stimuli/barWidth2_params%s.mat',sessPath,stimExt);
+    %params(2) = params(1);
+    %params(2).imFile = sprintf('%s/Stimuli/barWidth2_images%s.mat',sessPath,stimExt);
+    %params(2).paramsFile = sprintf('%s/Stimuli/barWidth2_params%s.mat',sessPath,stimExt);
     
-    params(3) = params(1);
-    params(3).imFile = sprintf('%s/Stimuli/barWidth3_images%s.mat',sessPath,stimExt);
-    params(3).paramsFile = sprintf('%s/Stimuli/barWidth3_params%s.mat',sessPath,stimExt);
+    %params(3) = params(1);
+    %params(3).imFile = sprintf('%s/Stimuli/barWidth3_images%s.mat',sessPath,stimExt);
+    %params(3).paramsFile = sprintf('%s/Stimuli/barWidth3_params%s.mat',sessPath,stimExt);
     
     %ip  = viewSet(ip,'rmParams',params);
     ip = viewSet(ip, 'Current DataTYPE', 'Original');
