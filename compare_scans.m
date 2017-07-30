@@ -7,6 +7,14 @@
 %
 % for now, doesn't change orientation of images, just takes them as they
 % arrive
+%
+% TODO: allow for arbitrary # of nii's, so can make movies through entire
+% session, etc. 
+%
+% (note that, on 7/30/2017, updated niftiPlotSlices.m - now does gray
+% colormap, can plot multiple slices, orients to RAI, etc)
+%
+% Tommy Sprague
 
 
 

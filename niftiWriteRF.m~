@@ -101,9 +101,6 @@ savenii.dim  = newnii.dim;
 niftiWrite(savenii,new_fn);
 
 % find 1:.nii*, then remove everything after nii* and replace w/ _params.txt
-params_fn = sprintf('%s_params.txt',new_fn(1:(strfind(new_fn,'.nii')-1)));
-fid = fopen(params_fn,'w');
-fprintf(fid,'%s ',which_params{:});
-fclose(fid);
+params_fn = newfn();
 
 return
