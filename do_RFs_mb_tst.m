@@ -204,6 +204,7 @@ for ee = 1:length(EPIext)
     
     % Define scan/stim and analysis parameters
     params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear_gpu'});
+    %params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear'});
     
     % make stimulus and add it to the parameters
     params = rmMakeStimulus(params);
@@ -218,7 +219,7 @@ for ee = 1:length(EPIext)
     
     %ip = rmMain(ip, 'gray', 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',sprintf('wm_nonlinear_gray_bp_noDecimate_noC2F'),'coarseDecimate',0,'coarseToFine',0);
     ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',0);
-    
+    %ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',0);
     % store it
     saveSession;
     mrvCleanWorkspace;

@@ -47,7 +47,7 @@ end
 
 %figure;
 
-f1=niftiPlotSlices(nii1,coords,vol1,1);
+f1=niftiPlotSlices(nii1,coords,vol1);
 set(get(gcf,'Children'),'CLim',clims);
 colormap gray;
 set(gcf,'Position',[571         939        1428         389]);
@@ -62,7 +62,7 @@ im = frame2im(this_frame);
 imwrite(imind,cm,fout,'gif', 'Loopcount',inf); 
 
 
-f2=niftiPlotSlices(nii2,coords,vol2,1);
+f2=niftiPlotSlices(nii2,coords,vol2);
 set(get(gcf,'Children'),'CLim',clims);
 set(gcf,'Position',[571         939        1428         389]);
 colormap gray;
