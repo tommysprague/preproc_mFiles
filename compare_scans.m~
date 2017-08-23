@@ -31,9 +31,7 @@ function fh = compare_scans(niis,fout,vols,coords,clims)
 % necessary to ensure images match. coords, clims must have number of rows
 % either matching number of images or a single row. 
 %
-
-
-
+%
 % Updated 8/14/2017 - allows multiple colormap inputs, as well as option
 % 'each' to use range of each image (presently, full volume)
 
