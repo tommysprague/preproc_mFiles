@@ -43,15 +43,44 @@ function fh = compare_scans(niis,fout,vols,coords,clims)
 % check if niis is valid - must be cell of str, str, nifti struct, or cell
 % of nifti structs
 
-% if single nii, must have a vols input
+% if niis is a string, make it a cell array
+if ischar(niis)
+    niis = {niis};
+end
+
+
+
 
 if nargin < 2 || isempty(fout)
     fout = 'myscans.gif';
 end
 
 if nargin < 3 || isempty(vols)
-    vols = ones(size(niis),1);
+    vols = ones(numel(niis),1);
 end
+
+% if single nii, must have a vols input
+if numel(niis)==1 && numel(vols)==1
+    error('preproc_mFiles:compare_scans:invalidInput','If a single file is provided, must provide multiple volumes');
+end
+
+if numel(niis)~=1 && ~( numel(vols)==1 || numel(vols)==numel(niis) )
+    error('preproc_mFiles:compare_scans:invalidInput','Incompatible number of nii files (%i) and volumes; either one must be single, or both must match',numel(niis),numel(vols));
+end
+
+% load niis if necessary, limit to chosen volume
+if isstruct(niis)
+    loaded_niis = niis; clear niis;
+else
+    for nn = 1:numel(niis)
+        loaded_niis(nn) = niftiRead(niis{nn});
+    end
+    clear niis; % clear so we don't double-up on memory
+end
+
+
+
+
 
 if nargin < 4 || isempty(coords)
     vol2 = 1;
@@ -66,6 +95,8 @@ end
 if nargin < 6 || isempty(clims)
     clims = repmat([min(min(double(nii1.data(:))),min(double(nii2.data(:)))) max(max(double(nii1.data(:))),max(double(nii2.data(:))))],2,1);
 end
+
+
 
 % if we want to comapre different contrasts, etc
 if ~isnumeric(clims)

@@ -31,7 +31,9 @@ function fh = compare_scans(niis,fout,vols,coords,clims)
 % necessary to ensure images match. coords, clims must have number of rows
 % either matching number of images or a single row. 
 %
-%
+
+
+
 % Updated 8/14/2017 - allows multiple colormap inputs, as well as option
 % 'each' to use range of each image (presently, full volume)
 
@@ -41,7 +43,15 @@ function fh = compare_scans(niis,fout,vols,coords,clims)
 % check if niis is valid - must be cell of str, str, nifti struct, or cell
 % of nifti structs
 
-% if single nii, must have a vols input
+% if niis is a string, make it a cell array
+if ischar(niis)
+    niis = {niis};
+end
+
+if isstruct(niis)
+    loaded_niis = niis; clea
+
+
 
 if nargin < 2 || isempty(fout)
     fout = 'myscans.gif';
@@ -65,6 +75,15 @@ if nargin < 6 || isempty(clims)
     clims = repmat([min(min(double(nii1.data(:))),min(double(nii2.data(:)))) max(max(double(nii1.data(:))),max(double(nii2.data(:))))],2,1);
 end
 
+
+% if single nii, must have a vols input
+if numel(niis)==1 && numel(vols)==1
+    error('preproc_mFiles:compare_scans:invalidInput','If a single file is provided, must provide multiple volumes');
+end
+
+if numel(niis)~=1 && ~( numel(vols)==1 || numel(vols)==numel(niis) )
+    error('preproc_mFiles:compare_scans:invalidInput','Incompatible number of nii files (%i) and volumes; either one must be single, or both must match',numel(niis),numel(vols));
+end
 % if we want to comapre different contrasts, etc
 if ~isnumeric(clims)
     if strcmpi(clims,'each')
