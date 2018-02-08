@@ -6,6 +6,13 @@
 % cd /my/func/dir
 % matlab -nodesktop -nojvm -nosplash -r "do_RFs(arg1,arg2,arg3);quit();"
 %
+% Typical call from MATLAB:
+% do_RFs('XX_RF1_vista','/deathstar/data/vRF_tcs/XX/RF1/XX_RF1_vista',{'surf','ss5','func'},'../../surfanat_brainmask_hires.nii.gz')
+%
+% for each datatype, allow ~7 hrs to run (faster for surf/ss5 than func) at
+% 2 mm resolution, a bit faster at 2.5 mm
+%
+%
 % NECESSARY ARGUMENTS:
 % - SUBJ ID
 % - session path (where the vista session will live)
@@ -21,11 +28,14 @@
 %
 % TCS 11/24/2017 - turned on PC calculation (need units to match task scans
 % if possible...)
+%
+% TCS 2/8/2018 - renamed to do_RFs.m, and now dynamically compute TR
+% duration
 
 % optional ROIs arg?
 
 
-function do_RFs_mb_tst(subjID,sessPath,EPIext,IPname,stimExt,myTR)
+function do_RFs(subjID,sessPath,EPIext,IPname,stimExt,myTR)
 
 addpath ~/
 startup;    % because sometimes running from command line is weird?
@@ -37,7 +47,7 @@ startup;    % because sometimes running from command line is weird?
 
 
 if nargin < 3
-    EPIext = {'func','ss5','surf'};%.nii.gz';
+    EPIext = {'surf','ss5','func'};%.nii.gz';
 end
 
 % because we want to loop over EPI extensions
@@ -57,13 +67,6 @@ if nargin < 5
     stimExt = '';
 end
 
-if nargin < 6
-    myTR = 1.2; % typically use this (s)
-end
-
-if ~isnumeric(myTR)
-    myTR = str2num(myTR);
-end
 
 % outsourced this stuff to a separate command (setup_paths_RFs.m, which
 % will live in this same directory and is run from matlab command)
@@ -94,6 +97,16 @@ for ee = 1:length(EPIext)
     niitmp = niftiRead(epi_file{ii});
     nTRs = niitmp.dim(4);
     fprintf('NII file %s has %i TRs\n',niitmp.fname,nTRs);
+    
+    if nargin < 6
+        myTR = niitmp.pixdim(4);
+    end
+    
+    if ~isnumeric(myTR)
+        myTR = str2num(myTR);
+    end
+    fprintf('NII file %s has TR = %0.03f s\n',niitmp.fname,myTR);
+    
     clear niitmp;
     
     % Specify INPLANE file
@@ -165,20 +178,12 @@ for ee = 1:length(EPIext)
     params(1).framePeriod=myTR; % TR in seconds TODO: make this automatic using nii info!!!!!
     params(1).nFrames=nTRs;        % number of volumes or 304
     
-    params(1).imFile=sprintf('%s/Stimuli/bar_stimulus_masks_%ims_images%s.mat',sessPath,myTR*1000,stimExt);     % see makeStimFromScan
+    params(1).imFile=sprintf('%s/Stimuli/bar_stimulus_masks_%ims_images%s.mat',sessPath,round(myTR*1000),stimExt);     % see makeStimFromScan
     params(1).jitterFile=sprintf('%s/Stimuli/none',sessPath);                 % ignore (for eye movements)
-    params(1).paramsFile=sprintf('%s/Stimuli/bar_stimulus_masks_%ims_params%s.mat',sessPath,myTR*1000,stimExt); % see makeStimFromScan
+    params(1).paramsFile=sprintf('%s/Stimuli/bar_stimulus_masks_%ims_params%s.mat',sessPath,round(myTR*1000),stimExt); % see makeStimFromScan
     params(1).imFilter='none';                           % stim file is already a binary contrast mask
     
-    %params(2) = params(1);
-    %params(2).imFile = sprintf('%s/Stimuli/barWidth2_images%s.mat',sessPath,stimExt);
-    %params(2).paramsFile = sprintf('%s/Stimuli/barWidth2_params%s.mat',sessPath,stimExt);
     
-    %params(3) = params(1);
-    %params(3).imFile = sprintf('%s/Stimuli/barWidth3_images%s.mat',sessPath,stimExt);
-    %params(3).paramsFile = sprintf('%s/Stimuli/barWidth3_params%s.mat',sessPath,stimExt);
-    
-    %ip  = viewSet(ip,'rmParams',params);
     ip = viewSet(ip, 'Current DataTYPE', 'Original');
     
     dt = viewGet(ip,'dt struct');
@@ -190,13 +195,7 @@ for ee = 1:length(EPIext)
     saveSession;
     mrvCleanWorkspace;
     clear ip dt;
-    %
     
-    % put the rm params into the view structure
-    %ip = rmLoadParameters(ip);
-    
-    % check it
-    %rmStimulusMatrix(viewGet(vw, 'rmparams'), [], [], 2, false);
     
     
     % Run it
@@ -221,9 +220,10 @@ for ee = 1:length(EPIext)
     
     RF_fn = sprintf('RF_%s',EPIext{ee});
     
-    %ip = rmMain(ip, 'gray', 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',sprintf('wm_nonlinear_gray_bp_noDecimate_noC2F'),'coarseDecimate',0,'coarseToFine',0);
+    
     ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',1);
     %ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',0);
+    
     % store it
     saveSession;
     mrvCleanWorkspace;
