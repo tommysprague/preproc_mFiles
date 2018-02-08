@@ -70,7 +70,7 @@ for ii = 1:size(nii_roi.data,4)
     
     fprintf('ROI %i:\t%i vox\n',ii,length(roiidx));
     
-    datatmp = reshape(nii_task.data,prod(nii_task.dim(1:3)),nii_task.dim(4));
+    datatmp = reshape(nii_task.data,prod(nii_task.dim(1:3)),size(nii_task.data,4));
     
     data_mat{ii} = datatmp(roiidx,:).';
     

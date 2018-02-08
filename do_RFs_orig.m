@@ -14,13 +14,11 @@
 % - stimExt (where to look for bar width files)
 %
 % TCS, 3/17/2017
-% TCS, 7/30/2017 - improvements, like dynamically reading # TRs, cleaning up
-% old bits
 
 % optional ROIs arg?
 
 
-function do_RFs_mb_tst(subjID,sessPath,EPIext,IPname,stimExt,myTR)
+function do_RFs(subjID,sessPath,EPIext,IPname,stimExt,myTR)
 
 addpath ~/
 startup;    % because sometimes running from command line is weird?
@@ -31,8 +29,12 @@ startup;    % because sometimes running from command line is weird?
 % if EPIext is an array, loop over those,?
 
 
+% if no EPInames, use wildcard w/ bar_width_*_pct_ss5.nii.gz, produced by
+% surfsmooth_tcs.sh and temporal_RF_tcs.sh
 if nargin < 3
-    EPIext = {'bc','ss5','surf'};%.nii.gz';
+    %EPInames = 'bar_width_*_pct_RAI.nii.gz';
+    %EPIext = {'bp_ss5_RAI_squeeze','bp_surf_RAI_squeeze'};%.nii.gz';
+    EPIext = {'pctDet_ss5','pctDet_surf'};%.nii.gz';
 end
 
 % because we want to loop over EPI extensions
@@ -49,11 +51,11 @@ if nargin < 4 || isempty(IPname)
 end
 
 if nargin < 5
-    stimExt = '';
+    stimExt = '_sameOrder';
 end
 
 if nargin < 6
-    myTR = 1.2; % typically use this (s)
+    myTR = 2.5; % typically use this (s)
 end
 
 if ~isnumeric(myTR)
@@ -66,6 +68,20 @@ end
 % or maybe this happens here? sure, let's do that
 setup_paths_RFs;
 
+%
+% % if no VISTAdir, use mine
+% if nargin < 5
+%     VISTAdir = '/deathstar/home/tommy/Documents/MATLAB/toolboxes_dev/vistasoft';
+% end
+%
+% % add other paths
+% % GRIDFITGPU
+% addpath(genpath('/deathstar/home/tommy/Documents/MATLAB/toolboxes/gridfitgpu/'));
+%
+%
+% % add vista path
+% addpath(genpath(VISTAdir));
+
 
 %% initialize vista session
 
@@ -74,23 +90,19 @@ cd(sessPath);
 
 for ee = 1:length(EPIext)
     
+    %sess_path = '/Volumes/data/ssPri_scanner/KDrf2/';
+    
+    %cd(sess_path)
+    
+    % if ~exist(sessPath/mrSESSION.mat)???
     
     
     % Specify EPI files
-    tmp = dir(sprintf('bar_width_*%s.nii.gz', EPIext{ee}));
+    tmp = dir(sprintf('bar_width_*_%s.nii.gz', EPIext{ee}));
     for ii = 1:numel(tmp)
         epi_file{ii} = tmp(ii).name;
         assert(exist(epi_file{ii}, 'file')>0)
-        
     end
-    
-    
-    % FOR NOW: assume all same # of TRs, so get nTRs from first nii
-    % file
-    niitmp = niftiRead(epi_file{ii});
-    nTRs = niitmp.dim(4);
-    fprintf('NII file %s has %i TRs\n',niitmp.fname,nTRs);
-    clear niitmp;
     
     % Specify INPLANE file
     inplane_file = IPname;
@@ -129,7 +141,77 @@ for ee = 1:length(EPIext)
     ok = mrInit(params);
     
     global dataTYPES;
-
+    %%
+    
+    % close; mrvCleanWorkspace;
+    % load mytransform.mat;
+    % vw = initHiddenInplane; mrGlobals;
+    % mrSESSION.alignment = mytransform; clear mytransform; %niftiCreateXformBetweenStrings('LPI','RAI');
+    % saveSession;
+    %
+    % % NOTE: check all this....
+    % %mrSESSION.alignment = niftiCreateXformBetweenStrings('RAI','LPI');
+    % %saveSession;
+    %
+    % % close it
+    % close; mrvCleanWorkspace;
+    %
+    
+    % Look at the mean functional data to ensure that it is similar to the
+    % inplane underlay
+    
+    % vw = mrVista;
+    % vw = loadMeanMap(vw, 1);
+    % vw = setDisplayMode(vw,'map');
+    % vw = refreshScreen(vw);
+    
+    % Compute a coranal
+    %vw = computeCorAnal(vw, 0, 1);
+    
+    
+    %% install a 'null' transformation (null transformation matrix?)
+    %{tried this w/ niftiCreateXformBetweenStrings, RAI-->LPI, whcih are oris of the func/ip and t1.nii.gz...
+    
+    
+    
+    
+    
+    
+    %% install segmentation
+    
+    % note - may need to turn ribbon.mgz or whatever from ../../ANATSESS/mri/
+    % to T1_class.nii.gz, but could do that in a super-script as well...
+    %
+    % probably best to see if it's there, and if not, copy/make it
+    
+    % vw = initHiddenInplane;
+    %
+    % query = 1;
+    % keepAllNodes = true;
+    % filePaths = {'t1_class.nii.gz'};
+    % numGrayLayers = 3;
+    % installSegmentation(query, keepAllNodes, filePaths, numGrayLayers)
+    
+    
+    %% TESTING: transform to gray
+    
+    
+    % % open the session
+    % ip = initHiddenInplane;
+    % %ip = viewSet(ip, 'current dt', 'Averages');
+    %
+    % gr = initHiddenGray;
+    % %gr = viewSet(gr, 'current dt', 'Averages');
+    %
+    % % xform the data
+    % gr = ip2volTSeries(ip,gr,0,'linear');
+    %
+    % %% create gray mask ROI in inplane view
+    % ip = makeGrayROI(ip); % from inplane!
+    % saveROI(ip,'selected',1);
+    %
+    %
+    % mrvCleanWorkspace;
     
     
     
@@ -143,7 +225,7 @@ for ee = 1:length(EPIext)
     
     params(1).fliprotate=[0 0 0]; %% Set up pRF model
     params(1).stimType='StimFromScan';
-    params(1).stimSize=29.35/2; % DEGREES VISUAL ANGLE (RADIUS)
+    params(1).stimSize=12; % DEGREES VISUAL ANGLE (RADIUS)
     params(1).stimWidth=45; % ignored when you have 'stimFromScan'
     params(1).stimStart=0;  % ignored when you have 'stimFromScan'
     params(1).stimDir=0;    % ignored when you have 'stimFromScan'
@@ -159,20 +241,20 @@ for ee = 1:length(EPIext)
     
     % TODO: be smarter at this!!!!
     params(1).framePeriod=myTR; % TR in seconds TODO: make this automatic using nii info!!!!!
-    params(1).nFrames=nTRs;        % number of volumes or 304
+    params(1).nFrames=120;        % number of volumes
     
-    params(1).imFile=sprintf('%s/Stimuli/bar_stimulus_masks_1200ms_images%s.mat',sessPath,stimExt);     % see makeStimFromScan
+    params(1).imFile=sprintf('%s/Stimuli/barWidth1_images%s.mat',sessPath,stimExt);     % see makeStimFromScan
     params(1).jitterFile=sprintf('%s/Stimuli/none',sessPath);                 % ignore (for eye movements)
-    params(1).paramsFile=sprintf('%s/Stimuli/bar_stimulus_masks_1200ms_params%s.mat',sessPath,stimExt); % see makeStimFromScan
+    params(1).paramsFile=sprintf('%s/Stimuli/barWidth1_params%s.mat',sessPath,stimExt); % see makeStimFromScan
     params(1).imFilter='none';                           % stim file is already a binary contrast mask
     
-    %params(2) = params(1);
-    %params(2).imFile = sprintf('%s/Stimuli/barWidth2_images%s.mat',sessPath,stimExt);
-    %params(2).paramsFile = sprintf('%s/Stimuli/barWidth2_params%s.mat',sessPath,stimExt);
+    params(2) = params(1);
+    params(2).imFile = sprintf('%s/Stimuli/barWidth2_images%s.mat',sessPath,stimExt);
+    params(2).paramsFile = sprintf('%s/Stimuli/barWidth2_params%s.mat',sessPath,stimExt);
     
-    %params(3) = params(1);
-    %params(3).imFile = sprintf('%s/Stimuli/barWidth3_images%s.mat',sessPath,stimExt);
-    %params(3).paramsFile = sprintf('%s/Stimuli/barWidth3_params%s.mat',sessPath,stimExt);
+    params(3) = params(1);
+    params(3).imFile = sprintf('%s/Stimuli/barWidth3_images%s.mat',sessPath,stimExt);
+    params(3).paramsFile = sprintf('%s/Stimuli/barWidth3_params%s.mat',sessPath,stimExt);
     
     %ip  = viewSet(ip,'rmParams',params);
     ip = viewSet(ip, 'Current DataTYPE', 'Original');
@@ -204,7 +286,6 @@ for ee = 1:length(EPIext)
     
     % Define scan/stim and analysis parameters
     params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear_gpu'});
-    %params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear'});
     
     % make stimulus and add it to the parameters
     params = rmMakeStimulus(params);
@@ -214,12 +295,13 @@ for ee = 1:length(EPIext)
     % store params in view struct
     ip  = viewSet(ip,'rmParams',params);
     
+    %ip = loadROI(ip,sprintf('%s/Inplane/ROIs/gray.mat',sessPath),1,1,1);
     
     RF_fn = sprintf('RF_%s',EPIext{ee});
     
     %ip = rmMain(ip, 'gray', 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',sprintf('wm_nonlinear_gray_bp_noDecimate_noC2F'),'coarseDecimate',0,'coarseToFine',0);
     ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',0);
-    %ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',0);
+    
     % store it
     saveSession;
     mrvCleanWorkspace;
@@ -230,12 +312,12 @@ for ee = 1:length(EPIext)
     
     %% save results into nii's
     basenii = niftiRead(epi_file{1});
-    which_params = {'pol','ve','ecc','sigmamajor','exponent','x0','y0','b'};
+    
     which_models = {'gFit','sFit','fFit'};
     for mm = 1:length(which_models)
         rf_model = load(fullfile(sessPath,'Inplane','Original',sprintf('%s-%s.mat', RF_fn,which_models{mm})));
         
-        niftiWriteRF(rf_model.model{1},fullfile(sessPath,'Inplane','Original',sprintf('%s-%s.nii.gz', RF_fn,which_models{mm})), basenii, which_params);
+        niftiWriteRF(rf_model.model{1},fullfile(sessPath,'Inplane','Original',sprintf('%s-%s.nii.gz', RF_fn,which_models{mm})), basenii);
         
         clear rf_model;
     end
