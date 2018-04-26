@@ -34,12 +34,16 @@ end
 
 if nargin < 6
 %    coords = [];
-    coords = round(size(nii1.data)/2);
-
+    %coords = repmat(round(size(nii1.data)/2),2,1);
+    coords1 = round(size(nii1.data)/2);
+    coords2 = round(size(nii2.data)/2);
+    coords = [ coords1(1:3);coords2(1:3)];
+    clear coords1 coords2;
 end
 
 if nargin < 7
-    clims = [min(min(double(nii1.data(:))),min(double(nii2.data(:)))) max(max(double(nii1.data(:))),max(double(nii2.data(:))))];
+    %clims = repmat([min(min(double(nii1.data(:))),min(double(nii2.data(:)))) max(max(double(nii1.data(:))),max(double(nii2.data(:))))],2,1);
+    clims = [min(double(nii1.data(:))) max(double(nii1.data(:))); min(double(nii2.data(:))) max(double(nii2.data(:)))];
 end
 
 
@@ -47,8 +51,8 @@ end
 
 %figure;
 
-f1=niftiPlotSlices(nii1,coords,vol1);
-set(get(gcf,'Children'),'CLim',clims);
+f1=niftiPlotSlices(nii1,coords(1,:),vol1);
+set(get(gcf,'Children'),'CLim',clims(1,:));
 colormap gray;
 set(gcf,'Position',[571         939        1428         389]);
 this_frame = getframe(f1);
@@ -62,8 +66,8 @@ im = frame2im(this_frame);
 imwrite(imind,cm,fout,'gif', 'Loopcount',inf); 
 
 
-f2=niftiPlotSlices(nii2,coords,vol2);
-set(get(gcf,'Children'),'CLim',clims);
+f2=niftiPlotSlices(nii2,coords(2,:),vol2);
+set(get(gcf,'Children'),'CLim',clims(2,:));
 set(gcf,'Position',[571         939        1428         389]);
 colormap gray;
 this_frame = getframe(f2);
