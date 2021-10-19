@@ -7,10 +7,10 @@ function setup_paths_RFs
 
 % if nargin < 1
 % add gridfitgpu
-addpath(genpath('~/Documents/MATLAB/toolboxes/gridfitgpu/'));
+addpath(genpath('~/matlab/toolboxes/gridfitgpu/'));
 
 % add local version of vistasoft w/ gpu functionality
-addpath(genpath('~/Documents/MATLAB/toolboxes_dev/vistasoft_ts/'));
+addpath(genpath('~/matlab/toolboxes/vistasoft_ts/'));
 
 % add this directory (where helper functions, etc, live) |||| NOT needed,
 % put this in startup.m and it works ok; users will just need to use a

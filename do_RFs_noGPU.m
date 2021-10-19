@@ -1,4 +1,6 @@
-%% do_RFs.m
+%% do_RFs_noGPU.m
+%
+% used to compare timing when no GPU used...
 %
 % general function for computing RFs, given averaged EPIs.
 %
@@ -35,7 +37,7 @@
 % optional ROIs arg?
 
 
-function do_RFs(subjID,sessPath,EPIext,IPname,stimExt,myTR)
+function do_RFs_noGPU(subjID,sessPath,EPIext,IPname,stimExt,myTR)
 
 addpath ~/
 startup;    % because sometimes running from command line is weird?
@@ -77,7 +79,7 @@ setup_paths_RFs;
 %% initialize vista session
 
 cd(sessPath);
-
+tic;
 
 for ee = 1:length(EPIext)
     
@@ -178,11 +180,6 @@ for ee = 1:length(EPIext)
     params(1).hrfParams={[1.6800 3 2.0500]  [5.4000 5.2000 10.8000 7.3500 0.3500]};
     params(1).calcPC = 1; % tryign this out...
     
-    % TCS hack 7/15/2021
-    if contains(subjID,'Norm') % trying to compute on already-PSC'd data - this seems to cause problems, probably due to numerical instability/floating point issues
-        params(1).calcPC = 0;
-    end
-    
     
     % TODO: be smarter at this!!!!
     params(1).framePeriod=myTR; % TR in seconds TODO: make this automatic using nii info!!!!!
@@ -216,8 +213,8 @@ for ee = 1:length(EPIext)
     ip = rmLoadParameters(ip);
     
     % Define scan/stim and analysis parameters
-    params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear_gpu'});
-    %params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear'});
+    %params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear_gpu'});
+    params = rmDefineParameters(ip, 'model', {'onegaussiannonlinear'});
     
     % make stimulus and add it to the parameters
     params = rmMakeStimulus(params);
@@ -231,7 +228,8 @@ for ee = 1:length(EPIext)
     RF_fn = sprintf('RF_%s',EPIext{ee});
     
     
-    ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',1);
+    %ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear_gpu'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',1);
+    ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',1);
     %ip = rmMain(ip, [], 'coarse to fine', 'model', {'onegaussiannonlinear'},'matFileName',RF_fn,'coarseDecimate',0,'coarseToFine',0,'calcPC',0);
     
     % store it
@@ -253,6 +251,7 @@ for ee = 1:length(EPIext)
         
         clear rf_model;
     end
-    
+ all_duration = toc;   
+ fprintf('TOTAL RF DURATION: %0.03f s\n',all_duration);
     
 end
